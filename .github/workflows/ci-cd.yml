@@ -3,7 +3,7 @@ on:
     branches: [master]
 
 jobs:
-  install:
+  test:
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -23,14 +23,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Upload dependencies
-        uses: actions/upload-artifact@v4
-        with:
-          name: dependencies-${{ matrix.os }}
-          path: ./node_modules
+      - name: Run tests
+        run: npm run test
 
-  test:
-    needs: install
+  typecheck:
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -42,15 +38,37 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Get dependencies
-        uses: actions/download-artifact@v4
+      - name: Setup Node.JS
+        uses: actions/setup-node@v4
         with:
-          name: dependencies-${{ matrix.os }}
+          node-version: ${{ matrix.node }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run typecheck
+        run: npm run test
+
+  build:
+    needs: [test, typecheck]
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+          os: [ubuntu-latest, macos-latest, windows-latest]
+          node: [22.20.0]
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
       - name: Setup Node.JS
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
 
-      - name: Run tests
-        run: npm run test
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
