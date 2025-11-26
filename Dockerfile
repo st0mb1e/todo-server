@@ -10,6 +10,7 @@ COPY package*.json .
 # Устанавливаем зависимости проекта
 RUN npm install
 
+COPY tsconfig.json ./tsconfig.json
 # Копируем исходный код приложения в контейнер
 COPY src/ ./src
 
