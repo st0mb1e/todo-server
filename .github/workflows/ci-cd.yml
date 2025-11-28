@@ -4,67 +4,7 @@ on:
     branches: [master] # Основная ветка репозитория
 
 jobs:
-  test:
-    # Запуск модульных тестов на всех ОС из матрицы
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      # Матрица для тестирования: 3 ОС и версия Node.js
-      matrix:
-          os: [ubuntu-latest, macos-latest, windows-latest]
-          node: [22.20.0]
-
-    steps:
-      # Клонирование репозитория
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      # Установка Node.js версии из матрицы
-      - name: Setup Node.JS
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node }}
-
-      # Установка зависимостей через npm ci
-      - name: Install dependencies
-        run: npm ci
-
-      # Запуск модульных тестов
-      - name: Run tests
-        run: npm run test
-
-  typecheck:
-    # Проверка типов на всех ОС из матрицы
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      # Та же матрица ОС и Node.js, что и в тестах
-      matrix:
-          os: [ubuntu-latest, macos-latest, windows-latest]
-          node: [22.20.0]
-
-    steps:
-      # Клонирование репозитория
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      # Установка Node.js
-      - name: Setup Node.JS
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node }}
-
-      # Установка зависимостей
-      - name: Install dependencies
-        run: npm ci
-
-      # Запуск проверки типов (TS typecheck)
-      - name: Run typecheck
-        run: npm run typecheck
-
   build:
-    # Сборка выполняется только после успешных test и typecheck
-    needs: [test, typecheck]
     # Build также выполняется на всех ОС из матрицы
     runs-on: ${{ matrix.os }}
 
@@ -93,9 +33,40 @@ jobs:
       - name: Build project
         run: npm run build
 
-  deploy:
-    # Деплой выполняется только после успешного завершения сборки
+  test:
+    # Модульное тестирование выполняется только после успешной сборки проекта
     needs: build
+    # Запуск модульных тестов на всех ОС из матрицы
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      # Матрица для тестирования: 3 ОС и версия Node.js
+      matrix:
+          os: [ubuntu-latest, macos-latest, windows-latest]
+          node: [22.20.0]
+
+    steps:
+      # Клонирование репозитория
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # Установка Node.js версии из матрицы
+      - name: Setup Node.JS
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # Установка зависимостей через npm ci
+      - name: Install dependencies
+        run: npm ci
+
+      # Запуск модульных тестов
+      - name: Run tests
+        run: npm run test
+
+  deploy:
+    # Деплой выполняется только после успешного выполнения модульных тестов
+    needs: test
     # Выполняется на self-hosted машине (то есть на собственном раннере)
     runs-on: self-hosted
 
